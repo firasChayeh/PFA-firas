@@ -237,13 +237,13 @@ body {
         }
 
         .container {
-            max-width: 550px;
             margin: 50px auto;
             background-color: transparent;
             padding: 10px;
             border-radius: 8px;
             backdrop-filter: blur(5px);
             box-shadow: 0 4px 8px rgba(231, 225, 225, 0.77);
+            width: 900px;
         }
 
         h2 {

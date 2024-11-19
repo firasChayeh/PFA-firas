@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'config.php';
+$pageTitle = "Dashboard - Airline Reservation";
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
@@ -8,7 +9,6 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = $_SESSION['user_id'];
-
 
 $sql = "SELECT destination, departure_date, departure_time, flight_class 
         FROM reservations 
@@ -18,110 +18,199 @@ $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $departure_date = $conn->real_escape_string($_POST['date']);
-    $departure_time = $conn->real_escape_string($_POST['time']);
-    $destination = $conn->real_escape_string($_POST['destination']);
-    $flight_class = $conn->real_escape_string($_POST['flight_class']);
-
-   
-    $insert_sql = "INSERT INTO reservations (user_id, flight_class, departure_date, departure_time, destination) 
-                   VALUES (?, ?, ?, ?, ?, ?)";
-    $insert_stmt = $conn->prepare($insert_sql);
-    $insert_stmt->bind_param("issssi", $user_id, $flight_class, $departure_date, $departure_time, $destination);
-
-    if ($insert_stmt->execute()) {
-        header("Location: dashboard.php");
-        exit();
-    } else {
-        $error = "Error: " . $conn->error;
-    }
-}
+include 'components/header.php';
+include 'components/navbar.php';
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation System</title>
-    <link rel="stylesheet" href="home.css">
-</head>
-<body>
-    <div>
-        <nav class="navbar">
-        <div class="logo">
-                <a href="#">Aéroport Monastir Habib Bourguiba</a>
+<style>
+    .destination-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+        overflow: hidden;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .destination-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+    }
+
+    .destination-card img {
+        height: 250px;
+        width: 100%;
+        object-fit: cover;
+        transition: all 0.5s ease;
+    }
+
+    .destination-card:hover img {
+        transform: scale(1.1);
+    }
+
+    .welcome-section {
+        background: linear-gradient(135deg, #0061f2 0%, #00ba88 100%);
+        padding: 3rem 0;
+        margin-bottom: 3rem;
+        color: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .booking-card {
+        border: none;
+        border-radius: 15px;
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .booking-card .card-header {
+        background: linear-gradient(135deg, #0061f2 0%, #00ba88 100%);
+        border-radius: 15px 15px 0 0;
+        padding: 1.5rem;
+        color: white;
+    }
+
+    .form-control, .form-select {
+        border-radius: 10px;
+        padding: 0.8rem;
+        border: 2px solid #e0e0e0;
+        margin-bottom: 1rem;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #0061f2;
+        box-shadow: 0 0 0 0.2rem rgba(0,97,242,0.25);
+    }
+
+    .btn-book {
+        background: linear-gradient(135deg, #0061f2 0%, #00ba88 100%);
+        border: none;
+        padding: 1rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: white;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-book:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    .destination-title {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 1rem;
+        margin: 0;
+        font-weight: 600;
+        text-align: center;
+    }
+</style>
+
+<div class="welcome-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center">
+                <h1 class="display-4 fw-bold">Welcome to the Airline Reservation System</h1>
+                <p class="lead">Experience luxury and comfort in every journey</p>
             </div>
-            <ul class="nav-links">
-                <li><a href="dashboard.php">Home</a></li>
-                <li><a href="user_reservation.php">Reservation</a></li>
-                <li><a href="logout.php">Log Out</a></li>
-            </ul>
         </div>
-        </nav>
-
     </div>
-
-    <div class="content">
-        <h1>Welcome to the Airline Reservation System</h1>
-        <p>Book your flights easily and quickly.</p>
-
-        <?php if (isset($error)): ?>
-            <div class="error-message" style="color: red;">
-                <?php echo htmlspecialchars($error); ?>
-            </div>
-        <?php endif; ?>
-
-        <div class="reservation-form">
-    <h2>Make a Reservation</h2>
-    <form action="available_flights.php" method="POST"> 
-        <label for="destination">Destination:</label>
-        <input type="text" id="destination" name="destination" required>
-
-        <label for="seats">Number of Seats:</label>
-        <input type="number" id="seats" name="seats" min="1" required>
-
-        <label for="flight-class">Flight Class:</label>
-        <select id="flight-class" name="flight_class" required>
-            <option value="Economy">Economy</option>
-            <option value="Business">Business</option>
-            <option value="First Class">First Class</option>
-        </select>
-
-        <br><br>
-        <button type="submit">Book Now</button>
-    </form>
 </div>
 
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="booking-card card">
+                <div class="card-header">
+                    <h2 class="h5 mb-0"><i class="fas fa-ticket-alt me-2"></i>Make a Reservation</h2>
+                </div>
+                <div class="card-body">
+                    <form action="available_flights.php" method="POST">
+                        <div class="mb-3">
+                            <label for="destination" class="form-label">Destination:</label>
+                            <input type="text" class="form-control" id="destination" name="destination" required>
+                        </div>
 
-        <div class="destination-gallery">
-            <h2>Popular Destinations</h2>
-            <div class="gallery">
-                <div class="gallery-item" onclick="setDestination(' France')">
-                    <img src="p13.jpg" alt="Paris">
-                    <p>France</p>
+                        <div class="mb-3">
+                            <label for="seats" class="form-label">Number of Seats:</label>
+                            <input type="number" class="form-control" id="seats" name="seats" min="1" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="flight-class" class="form-label">Flight Class:</label>
+                            <select class="form-select" id="flight-class" name="flight_class" required>
+                                <option value="Economy">Economy</option>
+                                <option value="Business">Business</option>
+                                <option value="First Class">First Class</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-book w-100">
+                            <i class="fas fa-plane-departure me-2"></i>Book Now
+                        </button>
+                    </form>
                 </div>
-                <div class="gallery-item" onclick="setDestination(' USA')">
-                    <img src="nyc.jpg" alt="New York">
-                    <p> USA</p>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="h5 mb-0"><i class="fas fa-globe me-2"></i>Popular Destinations</h2>
                 </div>
-                <div class="gallery-item" onclick="setDestination('Dubai')">
-                    <img src="dubai.jpg" alt="Dubai">
-                    <p>Dubai </p>
-                </div>
-                <div class="gallery-item" onclick="setDestination('Tokyo')">
-                    <img src="tokyo.jpg" alt="Tokyo">
-                    <p>Tokyo</p>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-6">
+                            <div class="destination-card" onclick="setDestination('France')">
+                                <div class="position-relative">
+                                    <img src="p13.jpg" alt="Paris">
+                                    <p class="destination-title">France</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="destination-card" onclick="setDestination('USA')">
+                                <div class="position-relative">
+                                    <img src="nyc.jpg" alt="New York">
+                                    <p class="destination-title">USA</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="destination-card" onclick="setDestination('Dubai')">
+                                <div class="position-relative">
+                                    <img src="dubai.jpg" alt="Dubai">
+                                    <p class="destination-title">Dubai</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="destination-card" onclick="setDestination('Tokyo')">
+                                <div class="position-relative">
+                                    <img src="tokyo.jpg" alt="Tokyo">
+                                    <p class="destination-title">Tokyo</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        function setDestination(destination) {
-            document.getElementById('destination').value = destination;
-        }
-    </script>
-</body>
-</html>
+<script>
+    function setDestination(destination) {
+        document.getElementById('destination').value = destination;
+    }
+</script>
+
+<?php include 'components/footer.php'; ?>

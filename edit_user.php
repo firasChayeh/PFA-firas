@@ -1,14 +1,13 @@
 <?php
 session_start();
-require_once 'config.php'; // Database connection
+require_once 'config.php';
+$pageTitle = "Edit User - Admin Dashboard";
 
-// Check if user is logged in as admin
 if (!isset($_SESSION['user_id']) || $_SESSION['user_id'] !== 'admin') {
     header("Location: login.php");
     exit();
 }
 
-// Fetch user data by ID from the URL parameter
 if (isset($_GET['id'])) {
     $user_id = intval($_GET['id']);
     $sql = "SELECT * FROM users WHERE id = ?";
@@ -27,7 +26,6 @@ if (isset($_GET['id'])) {
     exit();
 }
 
-// Handle form submission for updating user information
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $firstname = $conn->real_escape_string($_POST['firstname']);
     $lastname = $conn->real_escape_string($_POST['lastname']);
@@ -45,119 +43,151 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $error = "Error updating user: " . $conn->error;
     }
 }
+
+include 'components/header.php';
+include 'components/navbar.php';
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit User - Admin Dashboard</title>
-    <link rel="stylesheet" href="home.css">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            margin: 0;
-            padding: 0;
-        }
+<style>
+    .edit-user-container {
+        background: linear-gradient(135deg, rgba(0,97,242,0.1) 0%, rgba(0,186,136,0.1) 100%);
+        min-height: 100vh;
+        padding: 3rem 0;
+    }
 
-        .container {
-            max-width: 550px;
-            margin: 50px auto;
-            background-color: transparent;
-            padding: 10px;
-            border-radius: 8px;
-            backdrop-filter: blur(5px);
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-        }
+    .edit-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
 
-        h2 {
-            text-align: center;
-            margin-bottom: 30px;
-        }
+    .edit-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
 
-        form label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: bold;
-        }
+    .edit-header {
+        background: linear-gradient(135deg, #0061f2 0%, #00ba88 100%);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+    }
 
-        form input[type="text"], form input[type="email"], form input[type="password"] {
-            width: 500px;
-            padding: 10px;
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 16px;
-        }
+    .edit-form {
+        padding: 2rem;
+    }
 
-        .btn {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-align: center;
-        }
+    .form-floating {
+        margin-bottom: 1.5rem;
+    }
 
-        .btn:hover {
-            background-color: #2980b9;
-        }
+    .form-control {
+        border-radius: 10px;
+        padding: 1rem;
+        border: 2px solid #e0e0e0;
+        transition: all 0.3s ease;
+    }
 
-        .back-link {
-            text-align: center;
-            margin-top: 20px;
-        }
+    .form-control:focus {
+        border-color: #0061f2;
+        box-shadow: 0 0 0 0.2rem rgba(0,97,242,0.25);
+    }
 
-        .back-link a {
-            color: #3498db;
-            text-decoration: none;
-        }
+    .btn-update {
+        background: linear-gradient(135deg, #0061f2 0%, #00ba88 100%);
+        color: white;
+        border: none;
+        padding: 1rem;
+        border-radius: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+    }
 
-        .back-link a:hover {
-            text-decoration: underline;
-        }
+    .btn-update:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,97,242,0.3);
+    }
 
-        .error {
-            color: red;
-            text-align: center;
-        }
+    .btn-back {
+        color: #6c757d;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
 
-        .success {
-            color: green;
-            text-align: center;
-        }
-    </style>
-</head>
-<body>
-<br><br><h2>Edit User Information</h2>
+    .btn-back:hover {
+        color: #0061f2;
+        text-decoration: none;
+    }
+
+    .password-hint {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+</style>
+
+<div class="edit-user-container">
     <div class="container">
-        
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="edit-card">
+                    <div class="edit-header">
+                        <h2 class="mb-0">
+                            <i class="fas fa-user-edit me-2"></i>Edit User Information
+                        </h2>
+                    </div>
+                    
+                    <div class="edit-form">
+                        <?php if (isset($error)): ?>
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-circle me-2"></i><?php echo $error; ?>
+                            </div>
+                        <?php endif; ?>
 
-        <?php if (isset($error)) { echo "<p class='error'>$error</p>"; } ?>
+                        <form action="" method="POST">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="firstname" name="firstname" 
+                                       value="<?php echo htmlspecialchars($user['firstname']); ?>" required>
+                                <label for="firstname">First Name</label>
+                            </div>
 
-        <form action="" method="POST">
-            <label for="firstname">First Name</label>
-            <input type="text" id="firstname" name="firstname" value="<?php echo htmlspecialchars($user['firstname']); ?>" required>
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="lastname" name="lastname" 
+                                       value="<?php echo htmlspecialchars($user['lastname']); ?>" required>
+                                <label for="lastname">Last Name</label>
+                            </div>
 
-            <label for="lastname">Last Name</label>
-            <input type="text" id="lastname" name="lastname" value="<?php echo htmlspecialchars($user['lastname']); ?>" required>
+                            <div class="form-floating mb-3">
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="<?php echo htmlspecialchars($user['email']); ?>" required>
+                                <label for="email">Email Address</label>
+                            </div>
 
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" required>
+                            <div class="form-floating mb-4">
+                                <input type="password" class="form-control" id="password" name="password">
+                                <label for="password">Password</label>
+                                <div class="password-hint">Leave blank if you don't want to change the password</div>
+                            </div>
 
-            <label for="password">Password <small>(Leave blank if you don't want to change)</small></label>
-            <input type="password" id="password" name="password" placeholder="New Password (optional)">
-
-            <button type="submit" class="btn">Update User</button>
-        </form>
-    </div>
-    <div class="back-link">
-            <a href="manage_users.php">Back to Manage Users</a>
+                            <div class="d-grid gap-3">
+                                <button type="submit" class="btn btn-update">
+                                    <i class="fas fa-save me-2"></i>Update User
+                                </button>
+                                <a href="manage_users.php" class="btn btn-back text-center">
+                                    <i class="fas fa-arrow-left me-2"></i>Back to Manage Users
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
-</body>
-</html>
+    </div>
+</div>
+
+<?php include 'components/footer.php'; ?>
